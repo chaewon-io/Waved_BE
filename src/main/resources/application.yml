@@ -74,4 +74,5 @@ logging:
     root: INFO
     org.hibernate.orm.jdbc.bind: trace
 
+# test
 
