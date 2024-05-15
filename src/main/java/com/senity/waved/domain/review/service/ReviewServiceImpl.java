@@ -1,13 +1,20 @@
 package com.senity.waved.domain.review.service;
 
 import com.senity.waved.domain.challenge.entity.Challenge;
+import com.senity.waved.domain.challenge.exception.ChallengeNotFoundException;
+import com.senity.waved.domain.challenge.repository.ChallengeRepository;
 import com.senity.waved.domain.challenge.service.ChallengeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.challengeGroup.exception.ChallengeGroupNotCompletedException;
+import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.challengeGroup.service.ChallengeGroupUtil;
 import com.senity.waved.domain.member.entity.Member;
+import com.senity.waved.domain.member.exception.MemberNotFoundException;
+import com.senity.waved.domain.member.repository.MemberRepository;
 import com.senity.waved.domain.member.service.MemberUtil;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
+import com.senity.waved.domain.myChallenge.exception.MyChallengeNotFoundException;
+import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
 import com.senity.waved.domain.myChallenge.service.MyChallengeUtil;
 import com.senity.waved.domain.review.entity.Review;
 import com.senity.waved.domain.review.exception.AlreadyReviewedException;
@@ -49,9 +56,8 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public String getReviewContentForEdit(String email, Long reviewId) {
-        Review review = getReviewAndCheckPermission(email, reviewId, "리뷰 작성자만 수정 가능합니다.");
-        return review.getContent();
+    public Review getReviewContentForEdit(String email, Long reviewId) {
+        return getReviewAndCheckPermission(email, reviewId, "리뷰 작성자만 수정 가능합니다.");
     }
 
     @Override

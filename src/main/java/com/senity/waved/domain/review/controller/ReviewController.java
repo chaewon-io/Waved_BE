@@ -1,6 +1,7 @@
 package com.senity.waved.domain.review.controller;
 
 import com.senity.waved.common.ResponseDto;
+import com.senity.waved.domain.review.entity.Review;
 import com.senity.waved.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +34,8 @@ public class ReviewController {
             @AuthenticationPrincipal User user,
             @PathVariable("reviewId") Long reviewId
     ) {
-        return reviewService.getReviewContentForEdit(user.getUsername(), reviewId);
+        Review review = reviewService.getReviewContentForEdit(user.getUsername(), reviewId);
+        return review.getContent();
     }
 
     @PatchMapping("/{reviewId}")
