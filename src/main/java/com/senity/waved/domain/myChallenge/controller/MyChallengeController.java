@@ -1,12 +1,15 @@
 package com.senity.waved.domain.myChallenge.controller;
 
 import com.senity.waved.common.ResponseDto;
+import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeResponseDto;
 import com.senity.waved.domain.myChallenge.dto.response.MyVerifsResponseDto;
 import com.senity.waved.domain.myChallenge.entity.ChallengeStatus;
+import com.senity.waved.domain.myChallenge.entity.MyChallenge;
 import com.senity.waved.domain.myChallenge.service.MyChallengeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,10 +33,11 @@ public class MyChallengeController {
     ) {
         return myChallengeService.getMyChallengesListed(user.getUsername(), status);
     }
- 
+
     @GetMapping("/{myChallengeId}")
     public MyVerifsResponseDto getMyChallengeStatus(@PathVariable("myChallengeId") Long myChallengeId) {
-        return myChallengeService.getMyVerifications(myChallengeId);
+        Pair<MyChallenge, ChallengeGroup> pair = myChallengeService.getMyVerifications(myChallengeId);
+        return new MyVerifsResponseDto(pair.getFirst(), pair.getSecond());
     }
 
     @DeleteMapping("/{myChallengeId}/delete")

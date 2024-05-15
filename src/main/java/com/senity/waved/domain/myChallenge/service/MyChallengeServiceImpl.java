@@ -10,7 +10,6 @@ import com.senity.waved.domain.member.service.MemberUtil;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeCompletedDto;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeProgressDto;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeResponseDto;
-import com.senity.waved.domain.myChallenge.dto.response.MyVerifsResponseDto;
 import com.senity.waved.domain.myChallenge.entity.ChallengeStatus;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
 import com.senity.waved.domain.myChallenge.exception.InvalidChallengeStatusException;
@@ -19,6 +18,7 @@ import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
 import com.senity.waved.domain.paymentRecord.exception.MemberAndMyChallengeNotMatchException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,10 +79,10 @@ public class MyChallengeServiceImpl implements MyChallengeService {
     }
 
     @Override
-    public MyVerifsResponseDto getMyVerifications(Long myChallengeId) {
+    public Pair<MyChallenge, ChallengeGroup> getMyVerifications(Long myChallengeId) {
         MyChallenge myChallenge = getMyChallengeById(myChallengeId);
         ChallengeGroup group = getChallengeGroupById(myChallenge.getChallengeGroupId());
-        return new MyVerifsResponseDto(myChallenge, group);
+        return Pair.of(myChallenge, group);
     }
 
     private MyChallengeResponseDto mapToResponseDto(MyChallenge myChallenge, ChallengeStatus status, Member member) {
