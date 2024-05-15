@@ -3,7 +3,6 @@ package com.senity.waved.domain.member.service;
 import com.senity.waved.base.redis.RedisUtil;
 import com.senity.waved.domain.member.dto.GithubInfoDto;
 import com.senity.waved.domain.member.dto.ProfileEditDto;
-import com.senity.waved.domain.member.dto.response.ProfileInfoResponseDto;
 import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.member.exception.InvalidRefreshTokenException;
 import com.senity.waved.domain.member.exception.WrongGithubInfoException;
@@ -64,22 +63,9 @@ public class MemberServiceImpl implements MemberService {
         redisUtil.deleteByEmail(email);
     }
 
-    @Transactional
-    public ProfileInfoResponseDto getProfileInfo(String email) {
-        Member member = memberUtil.getByEmail(email);
-        return ProfileInfoResponseDto.from(member);
-    }
-
     @Transactional(readOnly = true)
-    public ProfileEditDto getProfileInfoToEdit(String email) {
-        Member member = memberUtil.getByEmail(email);
-        return ProfileEditDto.from(member);
-    }
-
-    @Transactional(readOnly = true)
-    public GithubInfoDto getGithubInfoToEdit(String email) {
-        Member member = memberUtil.getByEmail(email);
-        return GithubInfoDto.from(member.getGithubId(), member.getGithubToken());
+    public Member getMemberInfo(String email) {
+        return memberUtil.getByEmail(email);
     }
 
     @Transactional

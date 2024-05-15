@@ -5,6 +5,7 @@ import com.senity.waved.common.ResponseDto;
 import com.senity.waved.domain.member.dto.GithubInfoDto;
 import com.senity.waved.domain.member.dto.ProfileEditDto;
 import com.senity.waved.domain.member.dto.response.ProfileInfoResponseDto;
+import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.member.service.MemberService;
 import com.senity.waved.domain.paymentRecord.dto.response.PaymentRecordResponseDto;
 import com.senity.waved.domain.review.dto.response.MemberReviewResponseDto;
@@ -57,12 +58,14 @@ public class MemberController {
 
     @GetMapping("/profile")
     public ProfileInfoResponseDto memberProfile(@AuthenticationPrincipal User user) {
-        return memberService.getProfileInfo(user.getUsername());
+        Member member = memberService.getMemberInfo(user.getUsername());
+        return ProfileInfoResponseDto.from(member);
     }
 
     @GetMapping("/profile/edit")
     public ProfileEditDto getMemberProfileEdit(@AuthenticationPrincipal User user) {
-        return memberService.getProfileInfoToEdit(user.getUsername());
+        Member member = memberService.getMemberInfo(user.getUsername());
+        return ProfileEditDto.from(member);
     }
 
     @PostMapping("/github")
@@ -76,7 +79,8 @@ public class MemberController {
 
     @GetMapping("/github")
     public GithubInfoDto getGithubInfo(@AuthenticationPrincipal User user) {
-        return memberService.getGithubInfoToEdit(user.getUsername());
+        Member member = memberService.getMemberInfo(user.getUsername());
+        return GithubInfoDto.from(member.getGithubId(), member.getGithubToken());
     }
 
     @DeleteMapping("/github")
@@ -103,4 +107,3 @@ public class MemberController {
         return memberService.getMyPaymentRecordsPaged(user.getUsername(), pageNumber, pageSize);
     }
 }
-
