@@ -5,8 +5,7 @@ import com.senity.waved.domain.liked.exception.DuplicationLikeException;
 import com.senity.waved.domain.liked.exception.LikeNotAuthorizedException;
 import com.senity.waved.domain.liked.repository.LikedRepository;
 import com.senity.waved.domain.member.entity.Member;
-import com.senity.waved.domain.member.exception.MemberNotFoundException;
-import com.senity.waved.domain.member.repository.MemberRepository;
+import com.senity.waved.domain.member.service.MemberUtil;
 import com.senity.waved.domain.verification.entity.Verification;
 import com.senity.waved.domain.verification.exception.VerificationNotFoundException;
 import com.senity.waved.domain.verification.repository.VerificationRepository;
@@ -14,20 +13,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class LikedServiceImpl implements LikedService {
 
     private final VerificationRepository verificationRepository;
-    private final MemberRepository memberRepository;
+    private final MemberUtil memberUtil;
     private final LikedRepository likedRepository;
 
     @Override
     @Transactional
     public void addLikedToVerification(String email, Long verificationId) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         Verification verification = getVerificationById(verificationId);
         checkLikedExistence(member, verification);
 
@@ -46,17 +43,12 @@ public class LikedServiceImpl implements LikedService {
     @Override
     @Transactional
     public void removeLikeFromVerification(String email, Long verificationId) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         Verification verification = getVerificationById(verificationId);
         Liked liked = getLikedByMemberIdAndVerification(member.getId(), verification);
 
         verification.removeLikeFromVerification(liked);
         likedRepository.delete(liked);
-    }
-
-    private Member getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new MemberNotFoundException("해당 멤버를 찾을 수 없습니다."));
     }
 
     private Verification getVerificationById(Long id) {

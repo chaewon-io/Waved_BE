@@ -1,14 +1,12 @@
 package com.senity.waved.domain.myChallenge.service;
 
 import com.senity.waved.domain.challenge.entity.Challenge;
-import com.senity.waved.domain.challenge.exception.ChallengeNotFoundException;
-import com.senity.waved.domain.challenge.repository.ChallengeRepository;
+import com.senity.waved.domain.challenge.service.ChallengeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.challengeGroup.exception.ChallengeGroupNotFoundException;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.member.entity.Member;
-import com.senity.waved.domain.member.exception.MemberNotFoundException;
-import com.senity.waved.domain.member.repository.MemberRepository;
+import com.senity.waved.domain.member.service.MemberUtil;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeCompletedDto;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeProgressDto;
 import com.senity.waved.domain.myChallenge.dto.response.MyChallengeResponseDto;
@@ -38,13 +36,14 @@ import java.util.stream.Collectors;
 public class MyChallengeServiceImpl implements MyChallengeService {
 
     private final MyChallengeRepository myChallengeRepository;
-    private final MemberRepository memberRepository;
     private final ChallengeGroupRepository challengeGroupRepository;
-    private final ChallengeRepository challengeRepository;
+
+    private final MemberUtil memberUtil;
+    private final ChallengeUtil challengeUtil;
 
     @Override
     public void cancelAppliedMyChallenge(String email, Long myChallengeId) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         MyChallenge myChallenge = getMyChallengeById(myChallengeId);
         ChallengeGroup group = getChallengeGroupById(myChallenge.getChallengeGroupId());
 
@@ -55,7 +54,7 @@ public class MyChallengeServiceImpl implements MyChallengeService {
 
     @Override
     public List<MyChallengeResponseDto> getMyChallengesListed(String email, ChallengeStatus status) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         List<MyChallenge> myChallengesListed;
         ZonedDateTime todayStart = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).truncatedTo(ChronoUnit.DAYS);
 
@@ -88,7 +87,7 @@ public class MyChallengeServiceImpl implements MyChallengeService {
 
     private MyChallengeResponseDto mapToResponseDto(MyChallenge myChallenge, ChallengeStatus status, Member member) {
         ChallengeGroup group = getChallengeGroupById(myChallenge.getChallengeGroupId());
-        Challenge challenge = getChallengeById(group.getChallengeId());
+        Challenge challenge = challengeUtil.getById(group.getChallengeId());
 
         switch (status) {
             case PROGRESS:
@@ -101,16 +100,6 @@ public class MyChallengeServiceImpl implements MyChallengeService {
             default:
                 throw new InvalidChallengeStatusException("유효하지 않은 챌린지 상태 입니다.");
         }
-    }
-
-    private Challenge getChallengeById(Long id) {
-        return challengeRepository.findById(id)
-                .orElseThrow(() -> new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다."));
-    }
-
-    private Member getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new MemberNotFoundException("해당 멤버를 찾을 수 없습니다."));
     }
 
     private MyChallenge getMyChallengeById(Long id) {

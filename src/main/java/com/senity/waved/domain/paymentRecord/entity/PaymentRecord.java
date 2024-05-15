@@ -47,4 +47,3 @@ public class PaymentRecord extends BaseEntity {
                 .build();
     }
 }
-
