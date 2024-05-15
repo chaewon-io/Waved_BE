@@ -3,6 +3,7 @@ package com.senity.waved.domain.admin.controller;
 import com.senity.waved.common.ResponseDto;
 import com.senity.waved.domain.admin.service.AdminService;
 import com.senity.waved.domain.challengeGroup.dto.response.AdminChallengeGroupResponseDto;
+import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.verification.dto.response.AdminVerificationDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -23,8 +25,11 @@ public class AdminController {
 
     @GetMapping("/groups")
     public List<AdminChallengeGroupResponseDto> getGroups() {
-        return adminService.getGroups();
-   }
+        List<ChallengeGroup> groups = adminService.getGroups();
+        return groups.stream()
+                .map(AdminChallengeGroupResponseDto::from)
+                .collect(Collectors.toList());
+    }
 
     @GetMapping("/{challengeGroupId}/verifications")
     public Page<AdminVerificationDto> getGroupVerificationsPaged (

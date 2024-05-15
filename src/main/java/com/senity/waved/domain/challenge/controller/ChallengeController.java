@@ -1,7 +1,9 @@
 package com.senity.waved.domain.challenge.controller;
 
+import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.service.ChallengeService;
 import com.senity.waved.domain.challengeGroup.dto.response.ChallengeGroupHomeResponseDto;
+import com.senity.waved.domain.challengeGroup.mapper.ChallengeGroupMapper;
 import com.senity.waved.domain.review.dto.response.ChallengeReviewResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -17,10 +20,14 @@ import java.util.List;
 public class ChallengeController {
 
     private final ChallengeService challengeService;
+    private final ChallengeGroupMapper challengeGroupMapper;
 
     @GetMapping("/waiting")
     public List<ChallengeGroupHomeResponseDto> getHomeChallengeGroups() {
-        return challengeService.getHomeChallengeGroupsListed();
+        List<Challenge> challenges = challengeService.getHomeChallengeGroupsListed();
+        return challenges.stream()
+                .map(challenge -> challengeGroupMapper.toHomeResponseDto(challenge))
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{challengeId}/reviews")

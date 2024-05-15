@@ -19,7 +19,7 @@ public class LinkVerificationResponseDto extends VerificationResponseDto {
     private String link;
     private String content;
 
-    public static LinkVerificationResponseDto of(Verification verification, Member member, boolean isLiked) {
+    public static LinkVerificationResponseDto of(Verification verification, String nickname, boolean isLiked) {
         ZonedDateTime verificationDate = null;
         if (verification.getCreateDate() != null) {
             LocalDateTime localDateTime = verification.getCreateDate().toLocalDateTime();
@@ -31,8 +31,8 @@ public class LinkVerificationResponseDto extends VerificationResponseDto {
                 .verificationDate(verificationDate)
                 .likesCount(verification.getLikesCount())
                 .isLiked(isLiked)
-                .nickname(member.getNickname())
-                .memberId(member.getId())
+                .nickname(nickname)
+                .memberId(verification.getMemberId())
                 .link(verification.getLink())
                 .content(verification.getContent())
                 .build();

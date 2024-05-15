@@ -1,19 +1,15 @@
 package com.senity.waved.domain.challengeGroup.service;
 
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.challenge.entity.Challenge;
-import com.senity.waved.domain.challenge.exception.ChallengeNotFoundException;
-import com.senity.waved.domain.challenge.repository.ChallengeRepository;
-import com.senity.waved.domain.challengeGroup.dto.response.ChallengeGroupResponseDto;
+import com.senity.waved.domain.challenge.service.ChallengeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
-import com.senity.waved.domain.challengeGroup.exception.ChallengeGroupNotFoundException;
-import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.liked.repository.LikedRepository;
 import com.senity.waved.domain.member.entity.Member;
-import com.senity.waved.domain.member.exception.MemberNotFoundException;
-import com.senity.waved.domain.member.repository.MemberRepository;
+import com.senity.waved.domain.member.service.MemberUtil;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
-import com.senity.waved.domain.myChallenge.exception.AlreadyMyChallengeExistsException;
 import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
+import com.senity.waved.domain.myChallenge.service.MyChallengeUtil;
 import com.senity.waved.domain.paymentRecord.entity.PaymentRecord;
 import com.senity.waved.domain.paymentRecord.entity.PaymentStatus;
 import com.senity.waved.domain.paymentRecord.repository.PaymentRecordRepository;
@@ -26,11 +22,11 @@ import com.senity.waved.domain.verification.exception.VerifyNotFoundOnDateExcept
 import com.senity.waved.domain.verification.exception.WrongVerificationTypeException;
 import com.senity.waved.domain.verification.repository.VerificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -41,46 +37,51 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChallengeGroupServiceImpl implements ChallengeGroupService {
 
-    private final MemberRepository memberRepository;
     private final MyChallengeRepository myChallengeRepository;
     private final VerificationRepository verificationRepository;
-    private final ChallengeGroupRepository challengeGroupRepository;
     private final PaymentRecordRepository paymentRecordRepository;
-    private final ChallengeRepository challengeRepository;
     private final LikedRepository likedRepository;
 
-    // TODO 대기중인 챌린지만 신청 가능하게 설정
+    private final MemberUtil memberUtil;
+    private final ChallengeUtil challengeUtil;
+    private final ChallengeGroupUtil challengeGroupUtil;
+    private final MyChallengeUtil myChallengeUtil;
+    private final TimeUtil timeUtil;
+
     @Override
     @Transactional
     public Long applyForChallengeGroup(String email, Long groupId, Long deposit) {
-        Member member = getMemberByEmail(email);
-        ChallengeGroup group = getGroupById(groupId);
-        checkMyChallengeExistence(member.getId(), groupId);
+        Member member = memberUtil.getByEmail(email);
+        ChallengeGroup group = challengeGroupUtil.getById(groupId);
+        myChallengeUtil.checkMyChallengeExistence(member.getId(), groupId);
 
         MyChallenge newMyChallenge = MyChallenge.of(member, group, deposit);
         myChallengeRepository.save(newMyChallenge);
 
-        savePaymentRecordWhenDepositZero(newMyChallenge, member.getId(), group);
+        savePaymentRecordWhenDepositZero(newMyChallenge, member, group);
         return newMyChallenge.getId();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ChallengeGroupResponseDto getGroupDetail(String email, Long groupId) {
-        ChallengeGroup group = getGroupById(groupId);
-        Challenge challenge = getChallengeById(group.getChallengeId());
-        if (Objects.isNull(email)) {
-            return ChallengeGroupResponseDto.of(group, challenge, -1L);
-        }
-
-        Member member = getMemberByEmail(email);
-        Optional<MyChallenge> myChallenge = myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(member.getId(), group.getId());
-
-        Long myChallengeId = myChallenge.isPresent() ? myChallenge.get().getId() : -1L;
-        return ChallengeGroupResponseDto.of(group, challenge, myChallengeId);
+    public Pair<ChallengeGroup, Challenge> getGroupDetail(Long groupId) {
+        ChallengeGroup group = challengeGroupUtil.getById(groupId);
+        Challenge challenge = challengeUtil.getById(group.getChallengeId());
+        return Pair.of(group, challenge);
     }
 
-    //TODO: 페이징
+    @Override
+    @Transactional(readOnly = true)
+    public MyChallenge getMyChallenge(String email, Long groupId) {
+        if (Objects.isNull(email)) {
+            return null;
+        }
+
+        Member member = memberUtil.getByEmail(email);
+        Optional<MyChallenge> myChallenge = myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(member.getId(), groupId);
+        return myChallenge.isPresent() ? myChallenge.get() : null;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<VerificationResponseDto> getVerifications(String email, Long challengeGroupId, Timestamp verificationDate) {
@@ -94,8 +95,8 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
     }
 
     private List<VerificationResponseDto> getVerificationsByUserAndGroup(String email, Long challengeGroupId, Timestamp verificationDate, boolean isUserVerifications) {
-        Member member = getMemberByEmail(email);
-        ChallengeGroup challengeGroup = getGroupById(challengeGroupId);
+        Member member = memberUtil.getByEmail(email);
+        ChallengeGroup challengeGroup = challengeGroupUtil.getById(challengeGroupId);
         ZonedDateTime[] dateRange = calculateStartAndEndDate(verificationDate);
         List<Verification> verifications;
 
@@ -103,46 +104,18 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
             verifications = findVerificationsByMemberAndGroupAndDateRange(member, challengeGroup, dateRange);
         } else {
             verifications = findVerifications(challengeGroup, dateRange);
-        }
-        return convertToDtoList(verifications, member);
-    }
-
-    private Challenge getChallengeById(Long id) {
-        return challengeRepository.findById(id)
-                .orElseThrow(() -> new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다."));
-    }
-
-    private Member getMemberById(Long id) {
-        Optional<Member> optionalMember = memberRepository.findById(id);
-
-        if (optionalMember.isEmpty()) {
-            return Member.deletedMember();
-        } return optionalMember.get();
-    }
-
-    private Member getMemberByEmail(String email) {
-        return memberRepository.getMemberByEmail(email)
-                .orElseThrow(() -> new MemberNotFoundException("해당 회원을 찾을 수 없습니다."));
-    }
-
-    private ChallengeGroup getGroupById(Long id) {
-        return challengeGroupRepository.findById(id)
-                .orElseThrow(() -> new ChallengeGroupNotFoundException("해당 챌린지 그룹을 찾을 수 없습니다."));
+        } return convertToDtoList(verifications, member);
     }
 
     private ZonedDateTime[] calculateStartAndEndDate(Timestamp verificationDate) {
-        ZonedDateTime startOfDay = verificationDate.toLocalDateTime().atZone(ZoneId.of("Asia/Seoul")).toLocalDate().atStartOfDay(ZoneId.of("Asia/Seoul"));
-        ZonedDateTime endOfDay = startOfDay.withHour(23).withMinute(59).withSecond(59).withNano(999000000); // 23:59:59.999
-
+        ZonedDateTime startOfDay = timeUtil.timeStampToZoned(verificationDate);
+        ZonedDateTime endOfDay = timeUtil.calculateEndDate(startOfDay);
         return new ZonedDateTime[]{startOfDay, endOfDay};
     }
 
     private List<Verification> findVerificationsByMemberAndGroupAndDateRange(Member member, ChallengeGroup challengeGroup, ZonedDateTime[] dateRange) {
         return verificationRepository.findByMemberIdAndChallengeGroupIdAndCreateDateBetweenAndIsDeletedFalse(
-                member.getId(),
-                challengeGroup.getId(),
-                dateRange[0],
-                dateRange[1]
+                member.getId(), challengeGroup.getId(), dateRange[0], dateRange[1]
         );
     }
 
@@ -160,14 +133,14 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
         }
         return verifications.stream()
                 .map(verification -> {
-                    Member verificationMember = getMemberById(verification.getMemberId());
+                    Member verificationMember = memberUtil.getById(verification.getMemberId());
                     switch (verification.getVerificationType()) {
                         case TEXT:
-                            return TextVerificationResponseDto.of(verification, verificationMember, isLikedByMember(verification, member));
+                            return TextVerificationResponseDto.of(verification, verificationMember.getNickname(), isLikedByMember(verification, member));
                         case PICTURE:
-                            return PictureVerificationResponseDto.of(verification, verificationMember, isLikedByMember(verification, member));
+                            return PictureVerificationResponseDto.of(verification, verificationMember.getNickname(), isLikedByMember(verification, member));
                         case LINK:
-                            return LinkVerificationResponseDto.of(verification, verificationMember, isLikedByMember(verification, member));
+                            return LinkVerificationResponseDto.of(verification, verificationMember.getNickname(), isLikedByMember(verification, member));
                         case GITHUB:
                             break;
                         default:
@@ -181,20 +154,13 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
         return likedRepository.existsByMemberIdAndVerification(member.getId(), verification);
     }
 
-    private void savePaymentRecordWhenDepositZero(MyChallenge myChallenge, Long memberId, ChallengeGroup group) {
+    private void savePaymentRecordWhenDepositZero(MyChallenge myChallenge, Member member, ChallengeGroup group) {
         if (myChallenge.getDeposit() == 0) {
             String groupTitle = group.getGroupTitle();
             group.addParticipantCount();
 
-            PaymentRecord paymentRecord = PaymentRecord.of(PaymentStatus.APPLIED, memberId, myChallenge, groupTitle);
+            PaymentRecord paymentRecord = PaymentRecord.of(PaymentStatus.APPLIED, member, myChallenge, groupTitle);
             paymentRecordRepository.save(paymentRecord);
-        }
-    }
-
-    private void checkMyChallengeExistence(Long memberId, Long groupId) {
-        Optional<MyChallenge> myChallenge = myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(memberId, groupId);
-        if (myChallenge.isPresent()) {
-            throw new AlreadyMyChallengeExistsException("이미 신청되어있는 챌린지 그룹 입니다.");
         }
     }
 }

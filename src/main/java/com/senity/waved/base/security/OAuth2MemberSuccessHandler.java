@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -61,7 +62,7 @@ public class OAuth2MemberSuccessHandler extends SimpleUrlAuthenticationSuccessHa
     }
 
     private Member getMemberByEmail(String email) {
-        return memberRepository.getMemberByEmail(email)
+        return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new MemberNotFoundException("해당 멤버를 찾을 수 없습니다."));
     }
 }

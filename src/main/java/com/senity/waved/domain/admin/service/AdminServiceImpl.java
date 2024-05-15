@@ -1,15 +1,14 @@
 package com.senity.waved.domain.admin.service;
 
-import com.senity.waved.domain.challengeGroup.dto.response.AdminChallengeGroupResponseDto;
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
-import com.senity.waved.domain.challengeGroup.exception.ChallengeGroupNotFoundException;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
+import com.senity.waved.domain.challengeGroup.service.ChallengeGroupUtil;
 import com.senity.waved.domain.event.repository.EventRepository;
 import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.member.repository.MemberRepository;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
-import com.senity.waved.domain.myChallenge.exception.MyChallengeNotFoundException;
-import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
+import com.senity.waved.domain.myChallenge.service.MyChallengeUtil;
 import com.senity.waved.domain.notification.entity.Notification;
 import com.senity.waved.domain.notification.repository.NotificationRepository;
 import com.senity.waved.domain.verification.dto.response.AdminVerificationDto;
@@ -28,9 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,31 +38,29 @@ public class AdminServiceImpl implements AdminService {
 
     private final ChallengeGroupRepository groupRepository;
     private final VerificationRepository verificationRepository;
-    private final MyChallengeRepository myChallengeRepository;
     private final MemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
     private final EventRepository eventRepository;
 
+    private final ChallengeGroupUtil challengeGroupUtil;
+    private final MyChallengeUtil myChallengeUtil;
+    private final TimeUtil timeUtil;
+
     @Override
     @Transactional(readOnly = true)
-    public List<AdminChallengeGroupResponseDto> getGroups() {
-        ZonedDateTime todayStart = ZonedDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS);
-        List<ChallengeGroup> groups = groupRepository.findChallengeGroupsInProgress(todayStart);
-
-        return groups.stream()
-                .map(AdminChallengeGroupResponseDto::from)
-                .collect(Collectors.toList());
+    public List<ChallengeGroup> getGroups() {
+        ZonedDateTime todayStart = timeUtil.getTodayZoned();
+        return groupRepository.findChallengeGroupsInProgress(todayStart);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<AdminVerificationDto> getGroupVerificationsPaged(Long challengeGroupId, int pageNumber, int pageSize) {
-        ChallengeGroup challengeGroup = getGroupById(challengeGroupId);
+        ChallengeGroup challengeGroup = challengeGroupUtil.getById(challengeGroupId);
         List<Verification> verifications = verificationRepository.findByChallengeGroupIdAndIsDeletedFalse(challengeGroup.getId());
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         List<AdminVerificationDto> verificationDtoList = getPaginatedVerificationDtoList(verifications, pageable);
-
         return new PageImpl<>(verificationDtoList, pageable, verifications.size());
     }
 
@@ -79,16 +74,15 @@ public class AdminServiceImpl implements AdminService {
         verification.markAsDeleted(true);
 
         Member member = getMemberByIdWithNull(verification.getMemberId());
-        ChallengeGroup group = getGroupById(verification.getChallengeGroupId());
+        ChallengeGroup group = challengeGroupUtil.getById(verification.getChallengeGroupId());
 
-        MyChallenge myChallenge = getMyChallengeByGroupAndMemberId(group, verification.getMemberId());
+        MyChallenge myChallenge = myChallengeUtil.getByGroupAndMemberId(group, verification.getMemberId());
         myChallenge.deleteVerification(verification.getCreateDate());
         verificationRepository.save(verification);
 
         if (member != null) {
-            createCanceledVerificationNotification(verification, group.getGroupTitle(), member.getId());
+            createCanceledVerificationNotification(verification, group.getGroupTitle(), member);
             dispatchDeleteEvent(member.getId(), "인증삭제알림");
-
             member.updateNewEvent(true);
             memberRepository.flush();
         }
@@ -115,20 +109,20 @@ public class AdminServiceImpl implements AdminService {
                 .map(verification -> {
                     Member member = getMemberByIdWithNull(verification.getMemberId());
                     if (member == null) {
-                        return AdminVerificationDto.from(verification, Member.deletedMember());
+                        return AdminVerificationDto.from(verification, "탈퇴한서퍼");
                     }
-                    return AdminVerificationDto.from(verification, member);
+                    return AdminVerificationDto.from(verification, member.getNickname());
                 })
                 .collect(Collectors.toList());
     }
 
     private Member getMemberByIdWithNull(Long id) {
-        Optional<Member> optionalMember = memberRepository.findById(id);
+        Optional<Member> member = memberRepository.findById(id);
 
-        if (optionalMember.isEmpty()) {
+        if (member.isEmpty()) {
             return null;
         }
-        return optionalMember.get();
+        return member.get();
     }
 
     private Verification getVerificationById(Long id) {
@@ -136,23 +130,12 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new VerificationNotFoundException("해당 인증 내역을 찾을 수 없습니다."));
     }
 
-    private ChallengeGroup getGroupById(Long id) {
-        return groupRepository.findById(id)
-                .orElseThrow(() -> new ChallengeGroupNotFoundException("해당 챌린지 그룹을 찾을 수 없습니다."));
-    }
-
-    private MyChallenge getMyChallengeByGroupAndMemberId(ChallengeGroup group, Long memberId) {
-        return myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(memberId, group.getId())
-                .orElseThrow(() -> new MyChallengeNotFoundException("해당 마이챌린지를 찾을 수 없습니다."));
-    }
-
-    private void createCanceledVerificationNotification(Verification verification, String groupTitle, Long memberId) {
+    private void createCanceledVerificationNotification(Verification verification, String groupTitle, Member member) {
         int month = verification.getCreateDate().getMonthValue();
         int day = verification.getCreateDate().getDayOfMonth();
         String message = String.format("%s의 \r\n%d월 %d일 인증이 취소되었습니다.", groupTitle, month, day);
 
-        Notification newNotification = Notification.of(memberId, "인증 취소", message);
+        Notification newNotification = Notification.of(member, "인증 취소", message);
         notificationRepository.save(newNotification);
     }
 }
-

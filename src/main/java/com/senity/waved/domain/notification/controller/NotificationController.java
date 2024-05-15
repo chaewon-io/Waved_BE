@@ -2,6 +2,7 @@ package com.senity.waved.domain.notification.controller;
 
 import com.senity.waved.common.ResponseDto;
 import com.senity.waved.domain.notification.dto.response.NotificationResponseDto;
+import com.senity.waved.domain.notification.entity.Notification;
 import com.senity.waved.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -23,7 +25,11 @@ public class NotificationController {
 
     @GetMapping
     public List<NotificationResponseDto> getAllNotifications(@AuthenticationPrincipal User user) {
-        return notificationService.getNotifications(user.getUsername());
+        List<Notification> notifications = notificationService.getNotifications(user.getUsername());
+
+        return notifications.stream()
+                .map(NotificationResponseDto::of)
+                .collect(Collectors.toList());
     }
 
     @DeleteMapping("/{notificationId}")

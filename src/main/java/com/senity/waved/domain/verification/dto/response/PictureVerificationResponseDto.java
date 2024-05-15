@@ -18,7 +18,7 @@ public class PictureVerificationResponseDto extends VerificationResponseDto {
 
     private String imageUrl;
 
-    public static PictureVerificationResponseDto of(Verification verification, Member member, boolean isLiked) {
+    public static PictureVerificationResponseDto of(Verification verification, String nickname, boolean isLiked) {
         ZonedDateTime verificationDate = null;
         if (verification.getCreateDate() != null) {
             LocalDateTime localDateTime = verification.getCreateDate().toLocalDateTime();
@@ -30,8 +30,8 @@ public class PictureVerificationResponseDto extends VerificationResponseDto {
                 .verificationDate(verificationDate)
                 .likesCount(verification.getLikesCount())
                 .isLiked(isLiked)
-                .nickname(member.getNickname())
-                .memberId(member.getId())
+                .nickname(nickname)
+                .memberId(verification.getMemberId())
                 .imageUrl(verification.getImageUrl())
                 .build();
     }

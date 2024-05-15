@@ -2,8 +2,7 @@ package com.senity.waved.domain.event.service;
 
 import com.senity.waved.domain.event.repository.EventRepository;
 import com.senity.waved.domain.member.entity.Member;
-import com.senity.waved.domain.member.exception.MemberNotFoundException;
-import com.senity.waved.domain.member.repository.MemberRepository;
+import com.senity.waved.domain.member.service.MemberUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -20,38 +19,26 @@ import java.io.IOException;
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
-    private final MemberRepository memberRepository;
+    private final MemberUtil memberUtil;
 
     @Override
     public SseEmitter subscribe(String email) {
-        Long memberId = getMemberIdByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         SseEmitter sseEmitter = new SseEmitter(Long.MAX_VALUE);
 
         sendInitEvent(sseEmitter);
-        eventRepository.save(memberId, sseEmitter);
+        eventRepository.save(member.getId(), sseEmitter);
 
-        sseEmitter.onCompletion(() -> eventRepository.deleteById(memberId));
-        sseEmitter.onTimeout(() -> eventRepository.deleteById(memberId));
-        sseEmitter.onError((e) -> eventRepository.deleteById(memberId));
-
+        sseEmitter.onCompletion(() -> eventRepository.deleteById(member.getId()));
+        sseEmitter.onTimeout(() -> eventRepository.deleteById(member.getId()));
+        sseEmitter.onError((e) -> eventRepository.deleteById(member.getId()));
         return sseEmitter;
     }
 
     @Override
     public String checkNewEvent(String email) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         return new JSONObject().put("newEvent", member.getHasNewEvent()).toString();
-    }
-
-    private Member getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new MemberNotFoundException("회원 정보를 찾을 수 없습니다."));
-    }
-
-    private Long getMemberIdByEmail(String email) {
-        Member member = memberRepository.getMemberByEmail(email)
-                .orElseThrow(() -> new MemberNotFoundException("해당 멤버를 찾을 수 없습니다."));
-        return member.getId();
     }
 
     private void sendInitEvent(SseEmitter sseEmitter) {
@@ -61,5 +48,4 @@ public class EventServiceImpl implements EventService {
             e.printStackTrace();
         }
     }
-
 }

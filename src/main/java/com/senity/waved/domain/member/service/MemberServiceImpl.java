@@ -3,10 +3,8 @@ package com.senity.waved.domain.member.service;
 import com.senity.waved.base.redis.RedisUtil;
 import com.senity.waved.domain.member.dto.GithubInfoDto;
 import com.senity.waved.domain.member.dto.ProfileEditDto;
-import com.senity.waved.domain.member.dto.response.ProfileInfoResponseDto;
 import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.member.exception.InvalidRefreshTokenException;
-import com.senity.waved.domain.member.exception.MemberNotFoundException;
 import com.senity.waved.domain.member.exception.WrongGithubInfoException;
 import com.senity.waved.domain.member.repository.MemberRepository;
 import com.senity.waved.domain.paymentRecord.dto.response.PaymentRecordResponseDto;
@@ -31,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
 
+    private final MemberUtil memberUtil;
     private final MemberRepository memberRepository;
     private final ReviewRepository reviewRepository;
     private final PaymentRecordRepository paymentRecordRepository;
@@ -47,7 +46,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void editMemberProfile(String email, ProfileEditDto editDto) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         member.updateInfo(editDto);
         memberRepository.save(member);
     }
@@ -64,22 +63,9 @@ public class MemberServiceImpl implements MemberService {
         redisUtil.deleteByEmail(email);
     }
 
-    @Transactional
-    public ProfileInfoResponseDto getProfileInfo(String email) {
-        Member member = getMemberByEmail(email);
-        return ProfileInfoResponseDto.from(member);
-    }
-
     @Transactional(readOnly = true)
-    public ProfileEditDto getProfileInfoToEdit(String email) {
-        Member member = getMemberByEmail(email);
-        return ProfileEditDto.from(member);
-    }
-
-    @Transactional(readOnly = true)
-    public GithubInfoDto getGithubInfoToEdit(String email) {
-        Member member = getMemberByEmail(email);
-        return GithubInfoDto.from(member);
+    public Member getMemberInfo(String email) {
+        return memberUtil.getByEmail(email);
     }
 
     @Transactional
@@ -93,7 +79,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void saveGithubInfo(String email, GithubInfoDto githubDto) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         member.updateGithubInfo(githubDto);
 
         memberRepository.save(member);
@@ -102,13 +88,13 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void deleteGithubInfo(String email) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         member.updateGithubInfo(GithubInfoDto.deleteGithubInfo());
     }
 
     @Transactional(readOnly = true)
     public Page<MemberReviewResponseDto> getReviewsPaged(String email, int pageNumber, int pageSize) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createDate").descending());
         Page<Review> reviewPage = reviewRepository.getReviewByMemberId(member.getId(), pageable);
 
@@ -118,7 +104,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional(readOnly = true)
     public Page<PaymentRecordResponseDto> getMyPaymentRecordsPaged(String email, int pageNumber, int pageSize) {
-        Member member = getMemberByEmail(email);
+        Member member = memberUtil.getByEmail(email);
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createDate").descending());
         Page<PaymentRecord> paymentRecordPaged = paymentRecordRepository.getPaymentRecordByMemberId(member.getId(), pageable);
 
@@ -135,11 +121,6 @@ public class MemberServiceImpl implements MemberService {
             e.printStackTrace();
             return null;
         }
-    }
-
-    private Member getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new MemberNotFoundException("회원 정보를 찾을 수 없습니다."));
     }
 
     private List<PaymentRecordResponseDto> getPaymentRecordsListed(Page<PaymentRecord> paymentRecordPaged) {

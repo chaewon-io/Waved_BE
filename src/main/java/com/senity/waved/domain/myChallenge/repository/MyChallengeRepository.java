@@ -14,13 +14,12 @@ public interface MyChallengeRepository extends JpaRepository<MyChallenge, Long> 
 
     List<MyChallenge> findByChallengeGroupIdAndIsPaidTrue(Long challengeGroupId);
 
-    @Query("SELECT mc FROM MyChallenge mc JOIN ChallengeGroup cg ON mc.challengeGroupId = cg.id WHERE mc.memberId = :memberId AND cg.startDate > :todayStart AND mc.isPaid = TRUE")
+    @Query("SELECT mc FROM MyChallenge mc JOIN ChallengeGroup cg ON mc.challengeGroupId = cg.id WHERE mc.member.id = :memberId AND cg.startDate > :todayStart AND mc.isPaid = TRUE")
     List<MyChallenge> findMyChallengesWaitingAndIsPaidTrue(@Param("memberId") Long memberId, @Param("todayStart") ZonedDateTime todayStart);
 
-    @Query("SELECT mc FROM MyChallenge mc JOIN ChallengeGroup cg ON mc.challengeGroupId = cg.id WHERE mc.memberId = :memberId AND cg.startDate <= :todayStart AND cg.endDate >= :todayStart AND mc.isPaid = TRUE")
+    @Query("SELECT mc FROM MyChallenge mc JOIN ChallengeGroup cg ON mc.challengeGroupId = cg.id WHERE mc.member.id = :memberId AND cg.startDate <= :todayStart AND cg.endDate >= :todayStart AND mc.isPaid = TRUE")
     List<MyChallenge> findMyChallengesInProgressAndIsPaidTrue(@Param("memberId") Long memberId, @Param("todayStart") ZonedDateTime todayStart);
 
-    @Query("SELECT mc FROM MyChallenge mc JOIN ChallengeGroup cg ON mc.challengeGroupId = cg.id WHERE mc.memberId = :memberId AND cg.endDate < :todayStart AND mc.isPaid = TRUE")
+    @Query("SELECT mc FROM MyChallenge mc JOIN ChallengeGroup cg ON mc.challengeGroupId = cg.id WHERE mc.member.id = :memberId AND cg.endDate < :todayStart AND mc.isPaid = TRUE")
     List<MyChallenge> findMyChallengesCompletedAndIsPaidTrue(@Param("memberId") Long memberId, @Param("todayStart") ZonedDateTime todayStart);
 }
-

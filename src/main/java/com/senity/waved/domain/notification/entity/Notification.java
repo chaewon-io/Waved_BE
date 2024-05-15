@@ -1,11 +1,13 @@
 package com.senity.waved.domain.notification.entity;
 
 import com.senity.waved.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
+import com.senity.waved.domain.member.entity.Member;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 
 @Entity
@@ -20,12 +22,14 @@ public class Notification extends BaseEntity {
     @Column(name = "message")
     private String message;
 
-    @Column(name = "member_id")
-    private Long memberId;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
 
-    public static Notification of(Long memberId, String title, String message) {
+    public static Notification of(Member member, String title, String message) {
         return Notification.builder()
-                .memberId(memberId)
+                .member(member)
                 .title(title)
                 .message(message)
                 .build();

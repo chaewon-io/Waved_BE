@@ -1,10 +1,11 @@
 package com.senity.waved.domain.quiz.service;
 
 import com.senity.waved.domain.quiz.dto.response.QuizResponseDto;
+import com.senity.waved.domain.quiz.entity.Quiz;
 
 import java.sql.Timestamp;
 
 public interface QuizService {
-    QuizResponseDto getTodaysQuiz(Long challengeGroupId);
-    QuizResponseDto getQuizByDate(Long challengeGroupId, Timestamp quizDate);
+    Quiz getTodaysQuiz(Long challengeGroupId);
+    Quiz getQuizByDate(Long challengeGroupId, Timestamp quizDate);
 }
