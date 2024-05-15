@@ -3,6 +3,7 @@ package com.senity.waved.domain.challenge.service;
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.exception.ChallengeNotFoundException;
 import com.senity.waved.domain.challenge.repository.ChallengeRepository;
+import com.senity.waved.domain.challenge.repository.TypeIsFreeLGIProjection;
 import com.senity.waved.domain.challengeGroup.dto.response.ChallengeGroupHomeResponseDto;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
@@ -52,9 +53,9 @@ public class ChallengeServiceImpl implements ChallengeService {
         int cnt = Math.toIntExact(challengeRepository.count());
 
         for (int i = 1; i <= cnt; i++) {
-            Challenge challenge = getChallengeById(i * 1L);
-            List<ChallengeGroup> group = challengeGroupRepository.findByChallengeIdAndGroupIndex(challenge.getId(), challenge.getLatestGroupIndex());
-            homeGroups.add(ChallengeGroupHomeResponseDto.of(group.get(0), challenge));
+            TypeIsFreeLGIProjection challenge = getChallengeTypeIsFreeLGIById(i * 1L);
+            List<ChallengeGroup> group = challengeGroupRepository.findByChallengeIdAndGroupIndex(i * 1L, challenge.getLatestGroupIndex());
+            homeGroups.add(ChallengeGroupHomeResponseDto.of(group.get(0), challenge.getVerificationType(), challenge.getIsFree()));
         }
         return homeGroups;
     }
@@ -107,13 +108,6 @@ public class ChallengeServiceImpl implements ChallengeService {
         notifyMembersAppliedGroup(latestGroup.getId(), "챌린지 시작", startMessage);
     }
 
-    @Transactional
-    @Scheduled(cron = "0 0 2 * * MON")
-    public void deleteOldNotifications() {
-        ZonedDateTime deleteBefore = ZonedDateTime.now().toLocalDate().minusDays(14).atStartOfDay(ZoneId.systemDefault());
-        notificationRepository.deleteNotificationsByCreateDate(deleteBefore);
-    }
-
     private void notifyMembersAppliedGroup(Long groupId, String title, String message) {
         List<MyChallenge> myChallengeList = myChallengeRepository.findByChallengeGroupIdAndIsPaidTrue(groupId);
 
@@ -126,6 +120,13 @@ public class ChallengeServiceImpl implements ChallengeService {
         }
     }
 
+    @Transactional
+    @Scheduled(cron = "0 0 2 * * MON")
+    public void deleteOldNotifications() {
+        ZonedDateTime deleteBefore = ZonedDateTime.now().toLocalDate().minusDays(14).atStartOfDay(ZoneId.systemDefault());
+        notificationRepository.deleteNotificationsByCreateDate(deleteBefore);
+    }
+
     private List<ChallengeReviewResponseDto> getReviewListed(Page<Review> reviewPaged) {
         return reviewPaged.getContent()
                 .stream()
@@ -136,9 +137,12 @@ public class ChallengeServiceImpl implements ChallengeService {
                 .collect(Collectors.toList());
     }
 
-    private Challenge getChallengeById(Long id) {
-        return challengeRepository.findById(id)
-                .orElseThrow(() -> new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다."));
+    private TypeIsFreeLGIProjection getChallengeTypeIsFreeLGIById(Long id) {
+        List<TypeIsFreeLGIProjection> challenge = challengeRepository.findTypeIsFreeLGIById(id);
+        if (challenge.isEmpty()) {
+            throw new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다.");
+        }
+        return challenge.get(0);
     }
 
     private Member getMemberById(Long id) {
