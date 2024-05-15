@@ -1,5 +1,6 @@
 package com.senity.waved.domain.challenge.service;
 
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.repository.ChallengeRepository;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
@@ -24,9 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,6 +46,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final MemberUtil memberUtil;
     private final ChallengeUtil challengeUtil;
     private final ChallengeGroupUtil challengeGroupUtil;
+    private final TimeUtil timeUtil;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,7 +74,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     @Transactional
     @Scheduled(cron = "0 0 2 * * MON")
     public void deleteOldNotifications() {
-        ZonedDateTime deleteBefore = ZonedDateTime.now().toLocalDate().minusDays(14).atStartOfDay(ZoneId.systemDefault());
+        ZonedDateTime deleteBefore = timeUtil.getTodayZoned().minusDays(14);
         notificationRepository.deleteNotificationsByCreateDate(deleteBefore);
     }
 
@@ -86,9 +86,9 @@ public class ChallengeServiceImpl implements ChallengeService {
         for (Challenge challenge : challengeList) {
             Long latestGroupIndex = challenge.getLatestGroupIndex();
             ChallengeGroup latestGroup = challengeGroupUtil.getByChallengeIdAndGroupIndex(challenge.getId(), latestGroupIndex);
-            ZonedDateTime startDate = ZonedDateTime.of(LocalDateTime.from(latestGroup.getStartDate()), ZoneId.of("Asia/Seoul"));
+            ZonedDateTime startDate = timeUtil.localToZoned(LocalDateTime.from(latestGroup.getStartDate()));
 
-            if (startDate.equals(ZonedDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS))) {
+            if (startDate.equals(timeUtil.getTodayZoned())) {
                 Long lastGroupIndex = challenge.getLatestGroupIndex() - 1;
                 ChallengeGroup lastGroup = challengeGroupUtil.getByChallengeIdAndGroupIndex(challenge.getId(), lastGroupIndex);
 

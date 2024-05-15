@@ -2,19 +2,12 @@ package com.senity.waved.domain.verification.service;
 
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.entity.VerificationType;
-import com.senity.waved.domain.challenge.exception.ChallengeNotFoundException;
-import com.senity.waved.domain.challenge.repository.ChallengeRepository;
 import com.senity.waved.domain.challenge.service.ChallengeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
-import com.senity.waved.domain.challengeGroup.exception.ChallengeGroupNotFoundException;
-import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.challengeGroup.service.ChallengeGroupUtil;
 import com.senity.waved.domain.member.entity.Member;
-import com.senity.waved.domain.member.exception.MemberNotFoundException;
-import com.senity.waved.domain.member.repository.MemberRepository;
 import com.senity.waved.domain.member.service.MemberUtil;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
-import com.senity.waved.domain.myChallenge.exception.MyChallengeNotFoundException;
 import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
 import com.senity.waved.domain.myChallenge.service.MyChallengeUtil;
 import com.senity.waved.domain.verification.dto.request.VerificationRequestDto;
@@ -88,7 +81,6 @@ public class VerificationServiceImpl implements VerificationService {
 
     private boolean verifyText(VerificationRequestDto requestDto, Member member, ChallengeGroup challengeGroup) {
         validateRequestDto(requestDto);
-
         Verification verification = Verification.of(requestDto, member.getId(), challengeGroup.getId(), null, VerificationType.TEXT);
         verificationRepository.save(verification);
         return true;

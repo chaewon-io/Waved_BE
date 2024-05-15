@@ -1,5 +1,6 @@
 package com.senity.waved.domain.myChallenge.service;
 
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.service.ChallengeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
@@ -22,9 +23,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +39,7 @@ public class MyChallengeServiceImpl implements MyChallengeService {
 
     private final MemberUtil memberUtil;
     private final ChallengeUtil challengeUtil;
+    private final TimeUtil timeUtil;
 
     @Override
     public void cancelAppliedMyChallenge(String email, Long myChallengeId) {
@@ -56,7 +56,7 @@ public class MyChallengeServiceImpl implements MyChallengeService {
     public List<MyChallengeResponseDto> getMyChallengesListed(String email, ChallengeStatus status) {
         Member member = memberUtil.getByEmail(email);
         List<MyChallenge> myChallengesListed;
-        ZonedDateTime todayStart = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime todayStart = timeUtil.getTodayZoned();
 
         switch (status) {
             case PROGRESS:

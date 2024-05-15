@@ -1,5 +1,6 @@
 package com.senity.waved.domain.quiz.service;
 
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.quiz.entity.Quiz;
 import com.senity.waved.domain.quiz.exception.QuizNotFoundException;
 import com.senity.waved.domain.quiz.repository.QuizRepository;
@@ -10,9 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Slf4j
 @Service
@@ -22,19 +21,18 @@ public class QuizServiceImpl implements QuizService {
 
     private final QuizRepository quizRepository;
     private final VerificationService verificationService;
+    private final TimeUtil timeUtil;
 
     @Override
     public Quiz getTodaysQuiz(Long challengeGroupId) {
         verificationService.IsChallengeGroupTextType(challengeGroupId);
-        ZonedDateTime today = ZonedDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime today = timeUtil.getTodayZoned();
         return findQuizByDate(challengeGroupId, today);
     }
 
     @Override
     public Quiz getQuizByDate(Long challengeGroupId, Timestamp requestedQuizDate) {
-        ZonedDateTime quizDate = requestedQuizDate.toInstant().atZone(ZoneId.systemDefault())
-                .withZoneSameInstant(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS);
-
+        ZonedDateTime quizDate = timeUtil.getQuizDate(requestedQuizDate);
         verificationService.IsChallengeGroupTextType(challengeGroupId);
         return findQuizByDate(challengeGroupId, quizDate);
     }

@@ -1,6 +1,6 @@
 package com.senity.waved.domain.admin.service;
 
-import com.senity.waved.domain.challengeGroup.dto.response.AdminChallengeGroupResponseDto;
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.challengeGroup.service.ChallengeGroupUtil;
@@ -27,9 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,16 +44,13 @@ public class AdminServiceImpl implements AdminService {
 
     private final ChallengeGroupUtil challengeGroupUtil;
     private final MyChallengeUtil myChallengeUtil;
+    private final TimeUtil timeUtil;
 
     @Override
     @Transactional(readOnly = true)
-    public List<AdminChallengeGroupResponseDto> getGroups() {
-        ZonedDateTime todayStart = ZonedDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS);
-        List<ChallengeGroup> groups = groupRepository.findChallengeGroupsInProgress(todayStart);
-
-        return groups.stream()
-                .map(AdminChallengeGroupResponseDto::from)
-                .collect(Collectors.toList());
+    public List<ChallengeGroup> getGroups() {
+        ZonedDateTime todayStart = timeUtil.getTodayZoned();
+        return groupRepository.findChallengeGroupsInProgress(todayStart);
     }
 
     @Override
@@ -66,7 +61,6 @@ public class AdminServiceImpl implements AdminService {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         List<AdminVerificationDto> verificationDtoList = getPaginatedVerificationDtoList(verifications, pageable);
-
         return new PageImpl<>(verificationDtoList, pageable, verifications.size());
     }
 

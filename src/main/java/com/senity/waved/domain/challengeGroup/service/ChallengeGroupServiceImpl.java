@@ -1,5 +1,6 @@
 package com.senity.waved.domain.challengeGroup.service;
 
+import com.senity.waved.common.TimeUtil;
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.service.ChallengeUtil;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
@@ -26,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +46,7 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
     private final ChallengeUtil challengeUtil;
     private final ChallengeGroupUtil challengeGroupUtil;
     private final MyChallengeUtil myChallengeUtil;
+    private final TimeUtil timeUtil;
 
     @Override
     @Transactional
@@ -107,17 +108,14 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
     }
 
     private ZonedDateTime[] calculateStartAndEndDate(Timestamp verificationDate) {
-        ZonedDateTime startOfDay = verificationDate.toLocalDateTime().atZone(ZoneId.of("Asia/Seoul")).toLocalDate().atStartOfDay(ZoneId.of("Asia/Seoul"));
-        ZonedDateTime endOfDay = startOfDay.withHour(23).withMinute(59).withSecond(59).withNano(999000000); // 23:59:59.999
+        ZonedDateTime startOfDay = timeUtil.timeStampToZoned(verificationDate);
+        ZonedDateTime endOfDay = timeUtil.calculateEndDate(startOfDay);
         return new ZonedDateTime[]{startOfDay, endOfDay};
     }
 
     private List<Verification> findVerificationsByMemberAndGroupAndDateRange(Member member, ChallengeGroup challengeGroup, ZonedDateTime[] dateRange) {
         return verificationRepository.findByMemberIdAndChallengeGroupIdAndCreateDateBetweenAndIsDeletedFalse(
-                member.getId(),
-                challengeGroup.getId(),
-                dateRange[0],
-                dateRange[1]
+                member.getId(), challengeGroup.getId(), dateRange[0], dateRange[1]
         );
     }
 
