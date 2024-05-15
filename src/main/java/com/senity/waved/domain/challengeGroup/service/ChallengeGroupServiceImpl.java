@@ -60,7 +60,7 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
         MyChallenge newMyChallenge = MyChallenge.of(member, group, deposit);
         myChallengeRepository.save(newMyChallenge);
 
-        savePaymentRecordWhenDepositZero(newMyChallenge, member.getId(), group);
+        savePaymentRecordWhenDepositZero(newMyChallenge, member, group);
         return newMyChallenge.getId();
     }
 
@@ -181,12 +181,12 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
         return likedRepository.existsByMemberIdAndVerification(member.getId(), verification);
     }
 
-    private void savePaymentRecordWhenDepositZero(MyChallenge myChallenge, Long memberId, ChallengeGroup group) {
+    private void savePaymentRecordWhenDepositZero(MyChallenge myChallenge, Member member, ChallengeGroup group) {
         if (myChallenge.getDeposit() == 0) {
             String groupTitle = group.getGroupTitle();
             group.addParticipantCount();
 
-            PaymentRecord paymentRecord = PaymentRecord.of(PaymentStatus.APPLIED, memberId, myChallenge, groupTitle);
+            PaymentRecord paymentRecord = PaymentRecord.of(PaymentStatus.APPLIED, member, myChallenge, groupTitle);
             paymentRecordRepository.save(paymentRecord);
         }
     }

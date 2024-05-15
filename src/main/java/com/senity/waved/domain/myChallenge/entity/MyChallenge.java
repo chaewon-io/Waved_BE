@@ -6,12 +6,13 @@ import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.verification.exception.AlreadyVerifiedException;
 import com.senity.waved.domain.verification.exception.FailedVerificationException;
 import com.senity.waved.domain.verification.exception.VerifyNotFoundOnDateException;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -52,8 +53,10 @@ public class MyChallenge extends BaseEntity {
     @Column(name = "end_date")
     private ZonedDateTime endDate;
 
-    @Column(name = "member_id")
-    private Long memberId;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
 
     @Column(name = "challenge_group_id")
     private Long challengeGroupId;
@@ -131,7 +134,7 @@ public class MyChallenge extends BaseEntity {
                 .challengeGroupId(group.getId())
                 .successCount(0L)
                 .isReviewed(false)
-                .memberId(member.getId())
+                .member(member)
                 .myVerifs(300000000000000L)
                 .deposit(deposit)
                 .isRefundRequested(false)

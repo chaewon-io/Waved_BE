@@ -86,7 +86,7 @@ public class AdminServiceImpl implements AdminService {
         verificationRepository.save(verification);
 
         if (member != null) {
-            createCanceledVerificationNotification(verification, group.getGroupTitle(), member.getId());
+            createCanceledVerificationNotification(verification, group.getGroupTitle(), member);
             dispatchDeleteEvent(member.getId(), "인증삭제알림");
 
             member.updateNewEvent(true);
@@ -146,12 +146,12 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new MyChallengeNotFoundException("해당 마이챌린지를 찾을 수 없습니다."));
     }
 
-    private void createCanceledVerificationNotification(Verification verification, String groupTitle, Long memberId) {
+    private void createCanceledVerificationNotification(Verification verification, String groupTitle, Member member) {
         int month = verification.getCreateDate().getMonthValue();
         int day = verification.getCreateDate().getDayOfMonth();
         String message = String.format("%s의 \r\n%d월 %d일 인증이 취소되었습니다.", groupTitle, month, day);
 
-        Notification newNotification = Notification.of(memberId, "인증 취소", message);
+        Notification newNotification = Notification.of(member, "인증 취소", message);
         notificationRepository.save(newNotification);
     }
 }
