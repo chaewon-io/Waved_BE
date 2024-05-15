@@ -1,18 +1,23 @@
 package com.senity.waved.domain.quiz.dto.response;
 
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.ZonedDateTime;
 
 @Getter
-@Setter
+@SuperBuilder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QuizResponseDto {
     private ZonedDateTime date;
     private String question;
 
-    public QuizResponseDto(ZonedDateTime date, String question) {
-        this.date = date;
-        this.question = question;
+    public static QuizResponseDto of(ZonedDateTime date, String question) {
+        return QuizResponseDto.builder()
+                .date(date)
+                .question(question)
+                .build();
     }
 }

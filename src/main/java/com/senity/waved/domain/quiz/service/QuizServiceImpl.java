@@ -1,6 +1,5 @@
 package com.senity.waved.domain.quiz.service;
 
-import com.senity.waved.domain.quiz.dto.response.QuizResponseDto;
 import com.senity.waved.domain.quiz.entity.Quiz;
 import com.senity.waved.domain.quiz.exception.QuizNotFoundException;
 import com.senity.waved.domain.quiz.repository.QuizRepository;
@@ -25,27 +24,19 @@ public class QuizServiceImpl implements QuizService {
     private final VerificationService verificationService;
 
     @Override
-    public QuizResponseDto getTodaysQuiz(Long challengeGroupId) {
+    public Quiz getTodaysQuiz(Long challengeGroupId) {
         verificationService.IsChallengeGroupTextType(challengeGroupId);
-
         ZonedDateTime today = ZonedDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS);
-        Quiz quiz = findQuizByDate(challengeGroupId, today);
-        ZonedDateTime plusDate = quiz.getDate();
-
-        return new QuizResponseDto(plusDate, quiz.getQuestion());
+        return findQuizByDate(challengeGroupId, today);
     }
 
     @Override
-    public QuizResponseDto getQuizByDate(Long challengeGroupId, Timestamp requestedQuizDate) {
-
+    public Quiz getQuizByDate(Long challengeGroupId, Timestamp requestedQuizDate) {
         ZonedDateTime quizDate = requestedQuizDate.toInstant().atZone(ZoneId.systemDefault())
                 .withZoneSameInstant(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS);
 
         verificationService.IsChallengeGroupTextType(challengeGroupId);
-        Quiz quiz = findQuizByDate(challengeGroupId, quizDate);
-
-        ZonedDateTime plusDate = quiz.getDate();
-        return new QuizResponseDto(plusDate, quiz.getQuestion());
+        return findQuizByDate(challengeGroupId, quizDate);
     }
 
     private Quiz findQuizByDate(Long challengeGroupId, ZonedDateTime date) {
@@ -53,4 +44,3 @@ public class QuizServiceImpl implements QuizService {
                 .orElseThrow(() -> new QuizNotFoundException("퀴즈를 찾을 수 없습니다."));
     }
 }
-
