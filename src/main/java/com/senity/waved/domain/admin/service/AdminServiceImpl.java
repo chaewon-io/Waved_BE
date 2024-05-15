@@ -2,14 +2,13 @@ package com.senity.waved.domain.admin.service;
 
 import com.senity.waved.domain.challengeGroup.dto.response.AdminChallengeGroupResponseDto;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
-import com.senity.waved.domain.challengeGroup.exception.ChallengeGroupNotFoundException;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
+import com.senity.waved.domain.challengeGroup.service.ChallengeGroupUtil;
 import com.senity.waved.domain.event.repository.EventRepository;
 import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.member.repository.MemberRepository;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
-import com.senity.waved.domain.myChallenge.exception.MyChallengeNotFoundException;
-import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
+import com.senity.waved.domain.myChallenge.service.MyChallengeUtil;
 import com.senity.waved.domain.notification.entity.Notification;
 import com.senity.waved.domain.notification.repository.NotificationRepository;
 import com.senity.waved.domain.verification.dto.response.AdminVerificationDto;
@@ -41,10 +40,12 @@ public class AdminServiceImpl implements AdminService {
 
     private final ChallengeGroupRepository groupRepository;
     private final VerificationRepository verificationRepository;
-    private final MyChallengeRepository myChallengeRepository;
     private final MemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
     private final EventRepository eventRepository;
+
+    private final ChallengeGroupUtil challengeGroupUtil;
+    private final MyChallengeUtil myChallengeUtil;
 
     @Override
     @Transactional(readOnly = true)
@@ -60,7 +61,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional(readOnly = true)
     public Page<AdminVerificationDto> getGroupVerificationsPaged(Long challengeGroupId, int pageNumber, int pageSize) {
-        ChallengeGroup challengeGroup = getGroupById(challengeGroupId);
+        ChallengeGroup challengeGroup = challengeGroupUtil.getById(challengeGroupId);
         List<Verification> verifications = verificationRepository.findByChallengeGroupIdAndIsDeletedFalse(challengeGroup.getId());
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
@@ -79,9 +80,9 @@ public class AdminServiceImpl implements AdminService {
         verification.markAsDeleted(true);
 
         Member member = getMemberByIdWithNull(verification.getMemberId());
-        ChallengeGroup group = getGroupById(verification.getChallengeGroupId());
+        ChallengeGroup group = challengeGroupUtil.getById(verification.getChallengeGroupId());
 
-        MyChallenge myChallenge = getMyChallengeByGroupAndMemberId(group, verification.getMemberId());
+        MyChallenge myChallenge = myChallengeUtil.getByGroupAndMemberId(group, verification.getMemberId());
         myChallenge.deleteVerification(verification.getCreateDate());
         verificationRepository.save(verification);
 
@@ -133,16 +134,6 @@ public class AdminServiceImpl implements AdminService {
     private Verification getVerificationById(Long id) {
         return verificationRepository.findById(id)
                 .orElseThrow(() -> new VerificationNotFoundException("해당 인증 내역을 찾을 수 없습니다."));
-    }
-
-    private ChallengeGroup getGroupById(Long id) {
-        return groupRepository.findById(id)
-                .orElseThrow(() -> new ChallengeGroupNotFoundException("해당 챌린지 그룹을 찾을 수 없습니다."));
-    }
-
-    private MyChallenge getMyChallengeByGroupAndMemberId(ChallengeGroup group, Long memberId) {
-        return myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(memberId, group.getId())
-                .orElseThrow(() -> new MyChallengeNotFoundException("해당 마이챌린지를 찾을 수 없습니다."));
     }
 
     private void createCanceledVerificationNotification(Verification verification, String groupTitle, Member member) {

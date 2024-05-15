@@ -2,7 +2,6 @@ package com.senity.waved.domain.challenge.service;
 
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.repository.ChallengeRepository;
-import com.senity.waved.domain.challengeGroup.dto.response.ChallengeGroupHomeResponseDto;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.challengeGroup.service.ChallengeGroupUtil;
@@ -51,16 +50,15 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChallengeGroupHomeResponseDto> getHomeChallengeGroupsListed() {
-        List<ChallengeGroupHomeResponseDto> homeGroups = new ArrayList<>();
+    public List<Challenge> getHomeChallengeGroupsListed() {
         int cnt = Math.toIntExact(challengeRepository.count());
+        List<Challenge> challenges = new ArrayList<>();
 
         for (int i = 1; i <= cnt; i++) {
             Challenge challenge = challengeUtil.getById(i * 1L);
-            List<ChallengeGroup> group = challengeGroupRepository.findByChallengeIdAndGroupIndex(i * 1L, challenge.getLatestGroupIndex());
-            homeGroups.add(ChallengeGroupHomeResponseDto.of(group.get(0), challenge.getVerificationType(), challenge.getIsFree()));
+            challenges.add(challenge);
         }
-        return homeGroups;
+        return challenges;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.senity.waved.domain.paymentRecord.controller;
 
 import com.senity.waved.common.ResponseDto;
-import com.senity.waved.domain.paymentRecord.dto.request.PaymentRequestDto;
+import com.senity.waved.domain.paymentRecord.dto.request.PaymentRecordRequestDto;
 import com.senity.waved.domain.paymentRecord.service.PaymentRecordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ public class PaymentRecordController {
     public ResponseEntity<ResponseDto> validatePayment (
             @AuthenticationPrincipal User user,
             @PathVariable("myChallengeId") Long myChallengeId,
-            @RequestBody PaymentRequestDto requestDto
+            @RequestBody PaymentRecordRequestDto requestDto
     ) {
         paymentRecordService.validateAndSavePaymentRecord(user.getUsername(), myChallengeId, requestDto);
         return ResponseDto.of(HttpStatus.OK, "결제 검증이 완료되었습니다.");

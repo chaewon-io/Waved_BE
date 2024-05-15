@@ -22,9 +22,9 @@ public class MyChallengeUtil {
                 .orElseThrow(() -> new MyChallengeNotFoundException("해당 마이 챌린지를 찾을 수 없습니다."));
     }
 
-    public MyChallenge getByMemberAndGroup(Member member, ChallengeGroup challengeGroup) {
-        return myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(member.getId(), challengeGroup.getId())
-                .orElseThrow(() -> new MyChallengeNotFoundException("해당 마이 챌린지를 찾을 수 없습니다."));
+    public MyChallenge getByGroupAndMemberId(ChallengeGroup group, Long memberId) {
+        return myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(memberId, group.getId())
+                .orElseThrow(() -> new MyChallengeNotFoundException("해당 마이챌린지를 찾을 수 없습니다."));
     }
 
     public void checkMyChallengeExistence(Long memberId, Long groupId) {

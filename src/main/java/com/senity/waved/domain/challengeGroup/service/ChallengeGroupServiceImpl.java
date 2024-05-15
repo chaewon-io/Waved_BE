@@ -100,14 +100,12 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
             verifications = findVerificationsByMemberAndGroupAndDateRange(member, challengeGroup, dateRange);
         } else {
             verifications = findVerifications(challengeGroup, dateRange);
-        }
-        return convertToDtoList(verifications, member);
+        } return convertToDtoList(verifications, member);
     }
 
     private ZonedDateTime[] calculateStartAndEndDate(Timestamp verificationDate) {
         ZonedDateTime startOfDay = verificationDate.toLocalDateTime().atZone(ZoneId.of("Asia/Seoul")).toLocalDate().atStartOfDay(ZoneId.of("Asia/Seoul"));
         ZonedDateTime endOfDay = startOfDay.withHour(23).withMinute(59).withSecond(59).withNano(999000000); // 23:59:59.999
-
         return new ZonedDateTime[]{startOfDay, endOfDay};
     }
 

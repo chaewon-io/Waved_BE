@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PaymentRequestDto {
+public class PaymentRecordRequestDto {
     private String imp_uid;
     private Long deposit;
 }
