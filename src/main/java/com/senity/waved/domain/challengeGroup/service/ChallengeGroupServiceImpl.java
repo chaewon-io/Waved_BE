@@ -2,7 +2,6 @@ package com.senity.waved.domain.challengeGroup.service;
 
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.service.ChallengeUtil;
-import com.senity.waved.domain.challengeGroup.dto.response.ChallengeGroupResponseDto;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.liked.repository.LikedRepository;
 import com.senity.waved.domain.member.entity.Member;
@@ -22,6 +21,7 @@ import com.senity.waved.domain.verification.exception.VerifyNotFoundOnDateExcept
 import com.senity.waved.domain.verification.exception.WrongVerificationTypeException;
 import com.senity.waved.domain.verification.repository.VerificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,19 +63,22 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
 
     @Override
     @Transactional(readOnly = true)
-    public ChallengeGroupResponseDto getGroupDetail(String email, Long groupId) {
+    public Pair<ChallengeGroup, Challenge> getGroupDetail(Long groupId) {
         ChallengeGroup group = challengeGroupUtil.getById(groupId);
         Challenge challenge = challengeUtil.getById(group.getChallengeId());
+        return Pair.of(group, challenge);
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public MyChallenge getMyChallenge(String email, Long groupId) {
         if (Objects.isNull(email)) {
-            return ChallengeGroupResponseDto.of(group, challenge, -1L);
+            return null;
         }
 
         Member member = memberUtil.getByEmail(email);
-        Optional<MyChallenge> myChallenge = myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(member.getId(), group.getId());
-
-        Long myChallengeId = myChallenge.isPresent() ? myChallenge.get().getId() : -1L;
-        return ChallengeGroupResponseDto.of(group, challenge, myChallengeId);
+        Optional<MyChallenge> myChallenge = myChallengeRepository.findByMemberIdAndChallengeGroupIdAndIsPaidTrue(member.getId(), groupId);
+        return myChallenge.isPresent() ? myChallenge.get() : null;
     }
 
     @Override
