@@ -17,7 +17,7 @@ public class TextVerificationResponseDto extends VerificationResponseDto {
 
     private String content;
 
-    public static TextVerificationResponseDto of(Verification verification, Member member, boolean isLiked) {
+    public static TextVerificationResponseDto of(Verification verification, String nickname, boolean isLiked) {
         ZonedDateTime verificationDate = null;
         if (verification.getCreateDate() != null) {
             LocalDateTime localDateTime = verification.getCreateDate().toLocalDateTime();
@@ -28,12 +28,10 @@ public class TextVerificationResponseDto extends VerificationResponseDto {
                 .verificationId(verification.getId())
                 .isLiked(isLiked)
                 .likesCount(verification.getLikesCount())
-                .nickname(member.getNickname())
-                .memberId(member.getId())
+                .nickname(nickname)
+                .memberId(verification.getMemberId())
                 .verificationDate(verificationDate)
                 .content(verification.getContent())
                 .build();
     }
 }
-
-

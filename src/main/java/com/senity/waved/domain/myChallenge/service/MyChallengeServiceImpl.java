@@ -48,7 +48,7 @@ public class MyChallengeServiceImpl implements MyChallengeService {
         MyChallenge myChallenge = getMyChallengeById(myChallengeId);
         ChallengeGroup group = getChallengeGroupById(myChallenge.getChallengeGroupId());
 
-        validateMember(member, myChallenge);
+        validateMember(member.getId(), myChallenge);
         group.subtractParticipantCount();
         myChallengeRepository.delete(myChallenge);
     }
@@ -87,12 +87,12 @@ public class MyChallengeServiceImpl implements MyChallengeService {
     }
 
     private MyChallengeResponseDto mapToResponseDto(MyChallenge myChallenge, ChallengeStatus status, Member member) {
-        Boolean isGithubConnected = member.isGithubConnected();
         ChallengeGroup group = getChallengeGroupById(myChallenge.getChallengeGroupId());
         Challenge challenge = getChallengeById(group.getChallengeId());
 
         switch (status) {
             case PROGRESS:
+                Boolean isGithubConnected = member.getGithubId().equals(null)? false : true;
                 return MyChallengeProgressDto.of(myChallenge, group, challenge, isGithubConnected);
             case WAITING:
                 return MyChallengeResponseDto.of(myChallenge, group);
@@ -123,8 +123,8 @@ public class MyChallengeServiceImpl implements MyChallengeService {
                 .orElseThrow(() -> new ChallengeGroupNotFoundException("해당 챌린지 그룹을 찾을 수 없습니다."));
     }
 
-    private void validateMember(Member member, MyChallenge myChallenge) {
-        if(!myChallenge.getMember().equals(member.getId())) {
+    private void validateMember(Long memberId, MyChallenge myChallenge) {
+        if(!myChallenge.getMember().getId().equals(memberId)) {
             throw new MemberAndMyChallengeNotMatchException("해당 멤버의 마이 챌린지가 아닙니다.");
         }
     }

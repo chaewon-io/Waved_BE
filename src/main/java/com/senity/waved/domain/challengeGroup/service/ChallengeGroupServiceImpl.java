@@ -49,7 +49,7 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
     private final ChallengeRepository challengeRepository;
     private final LikedRepository likedRepository;
 
-    // TODO 대기중인 챌린지만 신청 가능하게 설정
+
     @Override
     @Transactional
     public Long applyForChallengeGroup(String email, Long groupId, Long deposit) {
@@ -112,16 +112,13 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
                 .orElseThrow(() -> new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다."));
     }
 
-    private Member getMemberById(Long id) {
-        Optional<Member> optionalMember = memberRepository.findById(id);
-
-        if (optionalMember.isEmpty()) {
-            return Member.deletedMember();
-        } return optionalMember.get();
+    private Member getMemberByEmail(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new MemberNotFoundException("해당 회원을 찾을 수 없습니다."));
     }
 
-    private Member getMemberByEmail(String email) {
-        return memberRepository.getMemberByEmail(email)
+    private Member getMemberById(Long id) {
+        return memberRepository.findById(id)
                 .orElseThrow(() -> new MemberNotFoundException("해당 회원을 찾을 수 없습니다."));
     }
 
@@ -163,11 +160,11 @@ public class ChallengeGroupServiceImpl implements ChallengeGroupService {
                     Member verificationMember = getMemberById(verification.getMemberId());
                     switch (verification.getVerificationType()) {
                         case TEXT:
-                            return TextVerificationResponseDto.of(verification, verificationMember, isLikedByMember(verification, member));
+                            return TextVerificationResponseDto.of(verification, verificationMember.getNickname(), isLikedByMember(verification, member));
                         case PICTURE:
-                            return PictureVerificationResponseDto.of(verification, verificationMember, isLikedByMember(verification, member));
+                            return PictureVerificationResponseDto.of(verification, verificationMember.getNickname(), isLikedByMember(verification, member));
                         case LINK:
-                            return LinkVerificationResponseDto.of(verification, verificationMember, isLikedByMember(verification, member));
+                            return LinkVerificationResponseDto.of(verification, verificationMember.getNickname(), isLikedByMember(verification, member));
                         case GITHUB:
                             break;
                         default:

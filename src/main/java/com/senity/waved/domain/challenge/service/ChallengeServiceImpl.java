@@ -3,11 +3,11 @@ package com.senity.waved.domain.challenge.service;
 import com.senity.waved.domain.challenge.entity.Challenge;
 import com.senity.waved.domain.challenge.exception.ChallengeNotFoundException;
 import com.senity.waved.domain.challenge.repository.ChallengeRepository;
-import com.senity.waved.domain.challenge.repository.TypeIsFreeLGIProjection;
 import com.senity.waved.domain.challengeGroup.dto.response.ChallengeGroupHomeResponseDto;
 import com.senity.waved.domain.challengeGroup.entity.ChallengeGroup;
 import com.senity.waved.domain.challengeGroup.repository.ChallengeGroupRepository;
 import com.senity.waved.domain.member.entity.Member;
+import com.senity.waved.domain.member.exception.MemberNotFoundException;
 import com.senity.waved.domain.member.repository.MemberRepository;
 import com.senity.waved.domain.myChallenge.entity.MyChallenge;
 import com.senity.waved.domain.myChallenge.repository.MyChallengeRepository;
@@ -30,7 +30,6 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -53,7 +52,7 @@ public class ChallengeServiceImpl implements ChallengeService {
         int cnt = Math.toIntExact(challengeRepository.count());
 
         for (int i = 1; i <= cnt; i++) {
-            TypeIsFreeLGIProjection challenge = getChallengeTypeIsFreeLGIById(i * 1L);
+            Challenge challenge = getChallengeById(i * 1L);
             List<ChallengeGroup> group = challengeGroupRepository.findByChallengeIdAndGroupIndex(i * 1L, challenge.getLatestGroupIndex());
             homeGroups.add(ChallengeGroupHomeResponseDto.of(group.get(0), challenge.getVerificationType(), challenge.getIsFree()));
         }
@@ -137,21 +136,14 @@ public class ChallengeServiceImpl implements ChallengeService {
                 .collect(Collectors.toList());
     }
 
-    private TypeIsFreeLGIProjection getChallengeTypeIsFreeLGIById(Long id) {
-        List<TypeIsFreeLGIProjection> challenge = challengeRepository.findTypeIsFreeLGIById(id);
-        if (challenge.isEmpty()) {
-            throw new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다.");
-        }
-        return challenge.get(0);
+    private Challenge getChallengeById(Long id) {
+        return challengeRepository.findById(id)
+                .orElseThrow(() -> new ChallengeNotFoundException("해당 챌린지를 찾을 수 없습니다."));
     }
 
     private Member getMemberById(Long id) {
-        Optional<Member> optionalMember = memberRepository.findById(id);
-
-        if (optionalMember.isEmpty()) {
-            return Member.deletedMember();
-        }
-        return optionalMember.get();
+        return memberRepository.findById(id)
+                .orElseThrow(() -> new MemberNotFoundException("해당 멤버를 찾을 수 없습니다."));
     }
 
     private ChallengeGroup getGroupByChallengeIdAndGroupIndex(Long challengeId, Long groupIndex) {

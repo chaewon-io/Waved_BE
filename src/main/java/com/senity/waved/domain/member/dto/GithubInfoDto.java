@@ -1,6 +1,5 @@
 package com.senity.waved.domain.member.dto;
 
-import com.senity.waved.domain.member.entity.Member;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,10 +12,10 @@ public class GithubInfoDto {
     private String githubId;
     private String githubToken;
 
-    public static GithubInfoDto from(Member member) {
+    public static GithubInfoDto from(String githubId, String githubToken) {
         return GithubInfoDto.builder()
-                .githubId(member.getGithubId())
-                .githubToken(member.getGithubToken())
+                .githubId(githubId)
+                .githubToken(githubToken)
                 .build();
     }
 

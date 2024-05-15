@@ -88,7 +88,6 @@ public class AdminServiceImpl implements AdminService {
         if (member != null) {
             createCanceledVerificationNotification(verification, group.getGroupTitle(), member);
             dispatchDeleteEvent(member.getId(), "인증삭제알림");
-
             member.updateNewEvent(true);
             memberRepository.flush();
         }
@@ -115,20 +114,20 @@ public class AdminServiceImpl implements AdminService {
                 .map(verification -> {
                     Member member = getMemberByIdWithNull(verification.getMemberId());
                     if (member == null) {
-                        return AdminVerificationDto.from(verification, Member.deletedMember());
+                        return AdminVerificationDto.from(verification, "탈퇴한서퍼");
                     }
-                    return AdminVerificationDto.from(verification, member);
+                    return AdminVerificationDto.from(verification, member.getNickname());
                 })
                 .collect(Collectors.toList());
     }
 
     private Member getMemberByIdWithNull(Long id) {
-        Optional<Member> optionalMember = memberRepository.findById(id);
+        Optional<Member> member = memberRepository.findById(id);
 
-        if (optionalMember.isEmpty()) {
+        if (member.isEmpty()) {
             return null;
         }
-        return optionalMember.get();
+        return member.get();
     }
 
     private Verification getVerificationById(Long id) {
@@ -155,4 +154,3 @@ public class AdminServiceImpl implements AdminService {
         notificationRepository.save(newNotification);
     }
 }
-

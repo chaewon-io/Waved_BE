@@ -1,6 +1,5 @@
 package com.senity.waved.domain.verification.dto.response;
 
-import com.senity.waved.domain.member.entity.Member;
 import com.senity.waved.domain.verification.entity.Verification;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,9 +18,9 @@ public class AdminVerificationDto {
     private String nickname;
     private Boolean isDeleted;
 
-    public static AdminVerificationDto from(Verification verification, Member member) {
+    public static AdminVerificationDto from(Verification verification, String nickname) {
         return AdminVerificationDto.builder()
-                .nickname(member.getNickname())
+                .nickname(nickname)
                 .content(verification.getContent())
                 .imageUrl(verification.getImageUrl())
                 .link(verification.getLink())

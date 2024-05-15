@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,7 +80,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional(readOnly = true)
     public GithubInfoDto getGithubInfoToEdit(String email) {
         Member member = getMemberByEmail(email);
-        return GithubInfoDto.from(member);
+        return GithubInfoDto.from(member.getGithubId(), member.getGithubToken());
     }
 
     @Transactional
